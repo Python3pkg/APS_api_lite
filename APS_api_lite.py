@@ -50,8 +50,15 @@ class APSConnection(object):
     def crane_transactions(self, start_date=None, end_date=None, filters=None):
         """Returns list of crane transactions between given times using premade query file"""
         trans_file = txt_to_str(module_dir + '\\' + 'queries\\crane_transactions')
-        if start_date and end_date:
+        if start_date and end_date:  # If start and end time are specified, edit the query to include it
             start_str = start_date.strftime('%b %d %Y %I:%M%p')
             end_str = end_date.strftime('%b %d %Y %I:%M%p')
             trans_file = trans_file.replace('--REPLACE--', '').replace('%START_STR%', start_str).replace('%END_STR%', end_str)
-        return self.general_query(trans_file)
+        if filters:  # If filters is not empty, search the query for matches to the filter
+            filtered_query = []
+            for i in self.general_query(trans_file):
+                if any(j in i for j in filters):
+                    filtered_query.append(i)
+            return filtered_query
+        else:
+            return self.general_query(trans_file)
