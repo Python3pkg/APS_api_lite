@@ -1,10 +1,57 @@
 import pymssql
-import re
-from os import listdir
 import os.path
 import datetime
 
+module_dir = os.path.dirname(__file__)  # Stored value for module directory
 
-class APS_Connection(server='',instance='', user='', pw=''):
 
-    def
+def txt_to_str(file):
+    """Simple function takes txt and converts it to str"""
+    with open(file, 'r') as open_file:
+        return open_file.read()
+
+
+class APSConnection(object):
+    """The primary class for conecting to the APS database
+
+    Keyword Arguments:
+        server -- server IP or host
+        instance -- instance name
+        user -- user id login to MSSQL
+        password -- self-explanatory
+        database -- database id at server/instance
+    """
+    def __init__(self, server=None, instance=None, user=None, password=None, database=None):
+        self.server = server
+        self.instance = instance
+        self.user = user
+        self.password = password
+        self.database = database
+
+    def connect(self):
+        """Attempts to establish connection to SQL Server database."""
+        conn = pymssql.connect(host=self.server+'\\'+self.instance,
+                               user=self.user,
+                               password=self.password,
+                               database=self.database)
+        return conn
+
+    def general_query(self, query):
+        """Directly queries database with given string."""
+        conn = self.connect()
+        cursor = conn.cursor()
+        cursor.execute(query)
+        return cursor.fetchall()
+
+    def txt_query(self, file):
+        """Runs query read from txt file at 'file' location."""
+        return self.general_query(txt_to_str(file))
+
+    def crane_transactions(self, start_date=None, end_date=None, filters=None):
+        """Returns list of crane transactions between given times using premade query file"""
+        trans_file = txt_to_str(module_dir + '\\' + 'queries\\crane_transactions')
+        if start_date and end_date:
+            start_str = start_date.strftime('%b %d %Y %I:%M%p')
+            end_str = end_date.strftime('%b %d %Y %I:%M%p')
+            trans_file = trans_file.replace('--REPLACE--', '').replace('%START_STR%', start_str).replace('%END_STR%', end_str)
+        return self.general_query(trans_file)
