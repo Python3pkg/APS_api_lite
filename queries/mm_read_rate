@@ -1,5 +1,5 @@
-select a.crane, a.goodocr, b.totalcontainer, a.goodocr*1.0/b.totalcontainer as read_rate from(
-SELECT        b.OCRNodeName AS crane, COUNT(a.TransactionID) AS goodocr
+select a.crane, a.goodmm, b.totalcontainer, a.goodmm*1.0/b.totalcontainer as read_rate from(
+SELECT        b.OCRNodeName AS crane, COUNT(a.TransactionID) AS goodmm
 FROM            dbo.OCSScan AS a WITH (nolock) INNER JOIN
                          dbo.OCSTransaction AS b WITH (nolock) ON a.TransactionID = b.ID INNER JOIN
                          dbo.OCSCraneTransaction AS c WITH (nolock) ON a.TransactionID = c.TransactionID
