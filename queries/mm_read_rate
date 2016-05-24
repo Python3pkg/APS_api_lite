@@ -1,11 +1,11 @@
-select a.crane, a.goodmm, b.totalcontainer, a.goodmm*1.0/b.totalcontainer as read_rate from(
-SELECT        b.OCRNodeName AS crane, COUNT(a.TransactionID) AS goodmm
+select a.crane, a.goodocr, b.totalcontainer, a.goodocr*1.0/b.totalcontainer as read_rate from(
+SELECT        b.OCRNodeName AS crane, COUNT(a.TransactionID) AS goodocr
 FROM            dbo.OCSScan AS a WITH (nolock) INNER JOIN
                          dbo.OCSTransaction AS b WITH (nolock) ON a.TransactionID = b.ID INNER JOIN
                          dbo.OCSCraneTransaction AS c WITH (nolock) ON a.TransactionID = c.TransactionID
 WHERE        --REPLACE--(a.ScanTime between convert(datetime, '%START_STR%') and convert(datetime, '%END_STR%')) AND
 (c.MoveType IN ('DISCHARGE', 'LOAD'))
-AND (a.OCRComponent = 'Container')
+AND (a.OCRComponent = 'Matchmaker')
 AND (a.OCRStatus = 'FULL_READ')
 GROUP BY b.OCRNodeName)a
 
@@ -16,7 +16,7 @@ FROM            dbo.OCSScan AS a WITH (nolock) INNER JOIN
                          dbo.OCSTransaction AS b WITH (nolock) ON a.TransactionID = b.ID INNER JOIN
                          dbo.OCSCraneTransaction AS c WITH (nolock) ON a.TransactionID = c.TransactionID
 WHERE        --REPLACE--(a.ScanTime between convert(datetime, '%START_STR%') and convert(datetime, '%END_STR%')) AND
-(c.MoveType IN ('DISCHARGE', 'LOAD')) AND (a.OCRComponent = 'Container')
+(c.MoveType IN ('DISCHARGE', 'LOAD')) AND (a.OCRComponent = 'Matchmaker')
 GROUP BY b.OCRNodeName
 )b
 on a.crane=b.crane

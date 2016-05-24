@@ -117,3 +117,15 @@ class APSConnection(object):
         return QueryResult(results=query_results,
                            column_names=self.general_query(trans_query).column_names)  # Returns object type QueryResult
 
+    def mm_read_rates(self, start_date=None, end_date=None, filters=None):
+        """Provides successful percentage of MM read rates by crane between 2 given dates."""
+        trans_file = txt_to_str(module_dir + '\\' + 'queries\\mm_read_rate')
+
+        # First, edit the query with the start and end date- if it exists
+        trans_query = edit_txt_query_with_start_and_end_date(trans_file, start=start_date, end=end_date)
+
+        # Next, filter by the 'filters kwarg'- if it exists. Return the filtered query
+        query_results = filter_query_results_according_to_filters_argument(self.general_query(trans_query).results,
+                                                                           filters=filters)
+        return QueryResult(results=query_results,
+                           column_names=self.general_query(trans_query).column_names)  # Returns object type QueryResult
