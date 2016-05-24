@@ -2,7 +2,7 @@ import pymssql
 import os.path
 import datetime
 
-module_dir = os.path.dirname(__file__)  # Stored value for module directory
+module_dir = os.path.dirname(__file__)  # Stored value for module directory, used for calling saved queries
 
 
 def txt_to_str(file):
@@ -10,8 +10,32 @@ def txt_to_str(file):
     with open(file, 'r') as open_file:
         return open_file.read()
 
-def exit_txt_query_with_start_and_end_date(start=None, end=None):
-    pass
+
+def edit_txt_query_with_start_and_end_date(query_string, start=None, end=None):
+    """edits saved queries with start and end dates if they're supplied in the function,
+    otherwise pass"""
+    if start and end:
+        start_str = start.strftime('%b %d %Y %I:%M%p')
+        end_str = end.strftime('%b %d %Y %I:%M%p')
+        trans_str = query_string.replace('--REPLACE--', '').\
+            replace('%START_STR%', start_str).\
+            replace('%END_STR%', end_str)
+        return trans_str
+    else:
+        return query_string
+
+
+def filter_query_results_according_to_filters_argument(query_results, filters=None):
+    """Takes a nested list and searches for any list that contains an element in the 'filters' list
+    If the 'filters' list is empty, return 'query_results'"""
+    if filters:  # If filters is not empty, search the query for matches to the filter
+        filtered_query = []
+        for i in query_results:
+            if any(j in i for j in filters):
+                filtered_query.append(i)
+        return filtered_query
+    else:
+        return query_results
 
 
 class QueryResult(object):
@@ -70,41 +94,26 @@ class APSConnection(object):
     def crane_transactions(self, start_date=None, end_date=None, filters=None):
         """Returns list of crane transactions between given times using premade query file."""
         trans_file = txt_to_str(module_dir + '\\' + 'queries\\crane_transactions')
-        if start_date and end_date:  # If start and end time are specified, edit the query to include it
-            start_str = start_date.strftime('%b %d %Y %I:%M%p')
-            end_str = end_date.strftime('%b %d %Y %I:%M%p')
-            trans_file = trans_file.replace('--REPLACE--', '').replace('%START_STR%', start_str).replace('%END_STR%', end_str)
-        if filters:  # If filters is not empty, search the query for matches to the filter
-            filtered_query = []
-            for i in self.general_query(trans_file).results:
-                if any(j in i for j in filters):
-                    filtered_query.append(i)
-            return QueryResult(results=filtered_query,
-                               column_names=self.general_query(trans_file).column_names)  # Return object type QueryResult
-        else:
-            return QueryResult(results=self.general_query(trans_file),
-                               column_names=self.general_query(trans_file).column_names)
+
+        # First, edit the query with the start and end date- if it exists
+        trans_query = edit_txt_query_with_start_and_end_date(trans_file, start=start_date, end=end_date)
+
+         # Next, filter by the 'filters kwarg'- if it exists. Return the filtered query
+        query_results = filter_query_results_according_to_filters_argument(self.general_query(trans_query).results,
+                                                                           filters=filters)
+        return QueryResult(results=query_results,
+                           column_names=self.general_query(trans_query).column_names)  # Returns object type QueryResult
 
     def ocr_read_rates(self, start_date=None, end_date=None, filters=None):
         """Provides successful percentage of OCR read rates by crane between 2 given dates."""
         trans_file = txt_to_str(module_dir + '\\' + 'queries\\ocr_read_rate')
 
         # First, edit the query with the start and end date- if it exists
-        if start_date and end_date:  # If start and end time are specified, edit the query to include it
-            start_str = start_date.strftime('%b %d %Y %I:%M%p')
-            end_str = end_date.strftime('%b %d %Y %I:%M%p')
-            trans_file = trans_file.replace('--REPLACE--', '').\
-                replace('%START_STR%', start_str).\
-                replace('%END_STR%', end_str)
+        trans_query = edit_txt_query_with_start_and_end_date(trans_file, start=start_date, end=end_date)
 
-        # Next, filter by the filters kwarg- if it exists. Return the filtered query
-        if filters:  # If filters is not empty, search the query for matches to the filter
-            filtered_query = []
-            for i in self.general_query(trans_file).results:
-                if any(j in i for j in filters):
-                    filtered_query.append(i)
-            return QueryResult(results=filtered_query,
-                               column_names=self.general_query(trans_file).column_names)  # Returns object type QueryResult
-        else:
-            return QueryResult(results=self.general_query(trans_file),
-                               column_names=self.general_query(trans_file).column_names)
+        # Next, filter by the 'filters kwarg'- if it exists. Return the filtered query
+        query_results = filter_query_results_according_to_filters_argument(self.general_query(trans_query).results,
+                                                                           filters=filters)
+        return QueryResult(results=query_results,
+                           column_names=self.general_query(trans_query).column_names)  # Returns object type QueryResult
+
