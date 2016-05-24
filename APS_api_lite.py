@@ -10,19 +10,22 @@ def txt_to_str(file):
     with open(file, 'r') as open_file:
         return open_file.read()
 
+def exit_txt_query_with_start_and_end_date(start=None, end=None):
+    pass
+
 
 class QueryResult(object):
     """Class for storing outputs of SQL queries
 
     Keyword Arguments:
         results -- output in form of nested lists of sql server query
-        column_names -- column names according to
+        column_names -- column names according to query_results, derived from python dp_api
 
     """
-    def __init__(self, results=None, column_names=None, description=None):
+    def __init__(self, results=None, column_names=None):
         self.results = results
         self.column_names = column_names
-        self.description = description
+
 
 
 class APSConnection(object):
@@ -57,7 +60,8 @@ class APSConnection(object):
         cursor = conn.cursor()
         cursor.execute(query)
         self.desc = cursor.description
-        return cursor.fetchall()
+        query_results = cursor.fetchall()
+        return QueryResult(results=query_results, column_names=[i[0] for i in self.desc])
 
     def txt_query(self, file):
         """Runs query read from txt file at 'file' location."""
@@ -72,25 +76,35 @@ class APSConnection(object):
             trans_file = trans_file.replace('--REPLACE--', '').replace('%START_STR%', start_str).replace('%END_STR%', end_str)
         if filters:  # If filters is not empty, search the query for matches to the filter
             filtered_query = []
-            for i in self.general_query(trans_file):
+            for i in self.general_query(trans_file).results:
                 if any(j in i for j in filters):
                     filtered_query.append(i)
-            return QueryResult(results=filtered_query, description=self.desc)  # Returns object type QueryResult
+            return QueryResult(results=filtered_query,
+                               column_names=self.general_query(trans_file).column_names)  # Return object type QueryResult
         else:
-            return QueryResult(results=self.general_query(trans_file), description=self.desc)
+            return QueryResult(results=self.general_query(trans_file),
+                               column_names=self.general_query(trans_file).column_names)
 
     def ocr_read_rates(self, start_date=None, end_date=None, filters=None):
         """Provides successful percentage of OCR read rates by crane between 2 given dates."""
         trans_file = txt_to_str(module_dir + '\\' + 'queries\\ocr_read_rate')
+
+        # First, edit the query with the start and end date- if it exists
         if start_date and end_date:  # If start and end time are specified, edit the query to include it
             start_str = start_date.strftime('%b %d %Y %I:%M%p')
             end_str = end_date.strftime('%b %d %Y %I:%M%p')
-            trans_file = trans_file.replace('--REPLACE--', '').replace('%START_STR%', start_str).replace('%END_STR%', end_str)
+            trans_file = trans_file.replace('--REPLACE--', '').\
+                replace('%START_STR%', start_str).\
+                replace('%END_STR%', end_str)
+
+        # Next, filter by the filters kwarg- if it exists. Return the filtered query
         if filters:  # If filters is not empty, search the query for matches to the filter
             filtered_query = []
-            for i in self.general_query(trans_file):
+            for i in self.general_query(trans_file).results:
                 if any(j in i for j in filters):
                     filtered_query.append(i)
-            return QueryResult(results=filtered_query, description=self.desc)  # Returns object type QueryResult
+            return QueryResult(results=filtered_query,
+                               column_names=self.general_query(trans_file).column_names)  # Returns object type QueryResult
         else:
-            return QueryResult(results=self.general_query(trans_file), description=self.desc)
+            return QueryResult(results=self.general_query(trans_file),
+                               column_names=self.general_query(trans_file).column_names)

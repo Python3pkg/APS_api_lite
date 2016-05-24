@@ -25,6 +25,6 @@ left join
 OCSScan as b
 on a.TransactionID = b.TransactionID
 
-where a.OCRComponent = 'Container' and (b.OCRComponent = 'MatchMaker' or z.MoveType = 'SHP_TO_SHP') and c.OCRComponent = 'container' and a.Position!='RIGHT'
+where a.OCRComponent = 'Container' and (b.OCRComponent = 'MatchMaker' or z.MoveType = 'SHP_TO_SHP' or z.MoveType ='HATCHLID_DISCHARGE') and c.OCRComponent = 'container' and a.Position!='RIGHT' and c.Position!='LEFT'
 --REPLACE-- and z.TrxnStartTS between convert(datetime, '%START_STR%') and convert(datetime, '%END_STR%')
-order by z.TrxnStartTS desc
+order by a.TransactionID desc
